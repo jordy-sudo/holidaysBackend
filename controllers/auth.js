@@ -26,6 +26,10 @@ const loginUsuario = async (req, res = response) => {
       ok: true,
       uid: usuario.id,
       name: usuario.name,
+      role: usuario.role,
+      position: usuario.position,
+      department: usuario.department,
+      email: usuario.email,
       token,
     });
   } catch (error) {
@@ -38,13 +42,20 @@ const loginUsuario = async (req, res = response) => {
 };
 
 const crearUsuario = async (req, res = response) => {
-  const { email, password } = req.body;
+  const { email, password, ci } = req.body;
   try {
     let usuario = await Usuario.findOne({ email });
     if (usuario) {
       return res.status(400).json({
         ok: false,
         msg: "El correo ya esta en uso",
+      });
+    }
+    usuario = await Usuario.findOne({ ci });
+    if (usuario) {
+      return res.status(400).json({
+        ok: false,
+        msg: "La cédula ya está en uso",
       });
     }
     usuario = new Usuario(req.body);
@@ -68,6 +79,37 @@ const crearUsuario = async (req, res = response) => {
   }
 };
 
+const actualizarRolUsuario = async (req, res = response) => {
+  const usuarioId = req.params.id;
+  const nuevoRol = req.body.newRole;
+
+  try {
+    const usuario = await Usuario.findById(usuarioId);
+
+    if (!usuario) {
+      return res.status(404).json({
+        ok: false,
+        msg: "Usuario no encontrado",
+      });
+    }
+
+    // Actualiza el rol del usuario
+    usuario.role = nuevoRol;
+    await usuario.save();
+
+    res.json({
+      ok: true,
+      msg: `Rol actualizado correctamente nuevo rol ${nuevoRol}`,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error al actualizar el rol del usuario",
+    });
+  }
+};
+
 const revalidarToken = async (req, res = response) => {
   const uid = req.uid;
   const name = req.name;
@@ -84,4 +126,5 @@ module.exports = {
   loginUsuario,
   crearUsuario,
   revalidarToken,
+  actualizarRolUsuario,
 };

@@ -4,22 +4,62 @@
 */
 const  {Router} = require('express');
 const {check} = require('express-validator');
-const { loginUsuario, crearUsuario, revalidarToken } = require('../controllers/auth');
+const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario } = require('../controllers/auth');
 const { validatorCamps } = require('../middleware/validator-camps');
+const usuarios = require('../models/usuarios');
+const { isDate } = require('../helpers/isDate');
 const router = Router();
 
+//
 router.post('/',
 [
     check('email','El email es obligatorio').isEmail(),
     validatorCamps
 ]
 ,loginUsuario);
-router.post('/new',[
-    check('name','El nombre es obligatorio').not().isEmpty(),
-    check('email','El email es obligatorio').isEmail(),
-    check('password','El password debe tener minimo 6 caracteres').isLength({min:6}),
-    validatorCamps
-],crearUsuario);
+
+//crear usuario
+router.post(
+    '/new',
+    [
+        check('name', 'Nombre es requerido').not().isEmpty(),
+        check('email', 'Email es requerido').isEmail(),
+        check('password', 'La contraseña debe tener 6 caracteres').isLength({ min: 6 }),
+        check('role', 'El Rol es requerido').custom((value) => {
+            if (!value || (value !== 'employee' && value !== 'boss' && value !== 'administrator' && value !== 'hr')) {
+                throw new Error('Los roles permitidos son "employee," "boss," "administrator," or "hr"');
+            }
+            return true;
+        }),
+        check('boss', 'Se necesita un ID valido del jefe').custom(async (value) => {
+            if (value) {
+                const bossExists = await usuarios.exists({ _id: value });
+                if (!bossExists) {
+                    throw new Error('El Jefe especificado no existe');
+                }
+            }
+            return true;
+        }),
+        check('position', 'El cargo es obligatorio').not().isEmpty(),
+        check('vacationDays', 'El numero de vacaciones es obligatorio').not().isEmpty(),
+        check('ci', 'La cedula del usuario es obligatorio y debe ser una cedula valida (10 digitos)').not().isEmpty().isLength({ min: 10, max: 10 }),
+        check('country', 'La ciudad del usuario es obligatorio').not().isEmpty(),
+        check('department', 'El departamento del usuario es obligatorio').not().isEmpty(),
+        check('area', 'El area del usuario es obligatorio').not().isEmpty(),
+        check('dateOfJoining', 'La fecha de ingreso a la empresa  del usuario es obligatorio').custom(isDate),
+        validatorCamps, 
+    ],
+    crearUsuario
+);
+
+//actualizar role
+router.patch('/update-rol/:id',[ check('newRole', 'El Rol es requerido').custom((value) => {
+    if (!value || (value !== 'employee' && value !== 'boss' && value !== 'administrator' && value !== 'rrhh')) {
+        throw new Error('Los roles permitidos son "employee," "boss," "administrator," or "hr"');
+    }
+    return true;
+}),validatorCamps],actualizarRolUsuario);
+
 router.get('/renew',revalidarToken);
 
 

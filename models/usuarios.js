@@ -21,8 +21,8 @@ const UserSchema = Schema({
     },
     role: {
         type: String,
-        enum: ['employee', 'boss', 'administrator', 'hr'],
-        default: 'employee',
+        enum: ['Empleado', 'Jefe', 'Administrador', 'rrhh'],
+        default: 'Empleado',
     },
     position: {
         type: String, 

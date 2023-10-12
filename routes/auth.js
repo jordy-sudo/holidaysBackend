@@ -4,7 +4,7 @@
 */
 const  {Router} = require('express');
 const {check} = require('express-validator');
-const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario } = require('../controllers/auth');
+const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario, listarUsuarios, actualizarInformacionUsuario } = require('../controllers/auth');
 const { validatorCamps } = require('../middleware/validator-camps');
 const usuarios = require('../models/usuarios');
 const { isDate } = require('../helpers/isDate');
@@ -26,8 +26,8 @@ router.post(
         check('email', 'Email es requerido').isEmail(),
         check('password', 'La contraseña debe tener 6 caracteres').isLength({ min: 6 }),
         check('role', 'El Rol es requerido').custom((value) => {
-            if (!value || (value !== 'employee' && value !== 'boss' && value !== 'administrator' && value !== 'hr')) {
-                throw new Error('Los roles permitidos son "employee," "boss," "administrator," or "hr"');
+            if (!value || (value !== 'Empleado' && value !== 'Jefe' && value !== 'Administrador' && value !== 'rrhh')) {
+                throw new Error('Los roles permitidos son "Empleado," "Jefe," "Administrador," or "rrhh"');
             }
             return true;
         }),
@@ -52,13 +52,20 @@ router.post(
     crearUsuario
 );
 
+//listar usuarios
+router.get('/listUsers',listarUsuarios)
+
+
 //actualizar role
 router.patch('/update-rol/:id',[ check('newRole', 'El Rol es requerido').custom((value) => {
-    if (!value || (value !== 'employee' && value !== 'boss' && value !== 'administrator' && value !== 'rrhh')) {
-        throw new Error('Los roles permitidos son "employee," "boss," "administrator," or "hr"');
+    if (!value || (value !== 'Empleado' && value !== 'Jefe' && value !== 'Administrador' && value !== 'rrhh')) {
+        throw new Error('Los roles permitidos son "Empleado," "Jefe," "Administrador," or "rrhh"');
     }
     return true;
 }),validatorCamps],actualizarRolUsuario);
+
+//actualizar informacion de usuario
+router.put('/updateInfouser/:id',actualizarInformacionUsuario);
 
 router.get('/renew',revalidarToken);
 

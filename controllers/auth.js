@@ -79,6 +79,36 @@ const crearUsuario = async (req, res = response) => {
   }
 };
 
+const actualizarInformacionUsuario = async (req, res = response) => {
+  const usuarioId = req.params.id;
+  const nuevaInformacionUsuario = req.body;
+
+  try {
+    const usuario = await Usuario.findByIdAndUpdate(usuarioId, nuevaInformacionUsuario, {
+      new: true, // Devuelve el documento modificado
+    });
+
+    if (!usuario) {
+      return res.status(404).json({
+        ok: false,
+        msg: "Usuario no encontrado",
+      });
+    }
+
+    res.json({
+      ok: true,
+      usuario: usuario,
+      msg: "Información del usuario actualizada correctamente",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error al actualizar la información del usuario",
+    });
+  }
+};
+
 const actualizarRolUsuario = async (req, res = response) => {
   const usuarioId = req.params.id;
   const nuevoRol = req.body.newRole;
@@ -110,6 +140,28 @@ const actualizarRolUsuario = async (req, res = response) => {
   }
 };
 
+const listarUsuarios = async (req, res = response) => {
+  try {
+      const usuarios = await Usuario.find()
+          .populate({
+              path: 'boss',
+              select: 'name',  // Puedes incluir los campos que deseas mostrar del objeto boss
+          })
+          .select('-password');  // Excluye los campos _id y password del resultado principal
+      
+      return res.json({
+          ok: true,
+          usuarios,
+      });
+  } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+          ok: false,
+          msg: "Error al obtener listado de usuarios activos",
+      });
+  }
+};
+
 const revalidarToken = async (req, res = response) => {
   const uid = req.uid;
   const name = req.name;
@@ -127,4 +179,6 @@ module.exports = {
   crearUsuario,
   revalidarToken,
   actualizarRolUsuario,
+  actualizarInformacionUsuario,
+  listarUsuarios,
 };

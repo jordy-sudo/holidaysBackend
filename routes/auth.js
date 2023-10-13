@@ -31,15 +31,7 @@ router.post(
             }
             return true;
         }),
-        check('boss', 'Se necesita un ID valido del jefe').custom(async (value) => {
-            if (value) {
-                const bossExists = await usuarios.exists({ _id: value });
-                if (!bossExists) {
-                    throw new Error('El Jefe especificado no existe');
-                }
-            }
-            return true;
-        }),
+        check('boss', 'Se necesita una cedula valida del jefe').not().isEmpty(),
         check('position', 'El cargo es obligatorio').not().isEmpty(),
         check('vacationDays', 'El numero de vacaciones es obligatorio').not().isEmpty(),
         check('ci', 'La cedula del usuario es obligatorio y debe ser una cedula valida (10 digitos)').not().isEmpty().isLength({ min: 10, max: 10 }),

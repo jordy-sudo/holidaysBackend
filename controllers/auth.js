@@ -42,7 +42,7 @@ const loginUsuario = async (req, res = response) => {
 };
 
 const crearUsuario = async (req, res = response) => {
-  const { email, password, ci } = req.body;
+  const { email, password, ci,boss } = req.body;
   try {
     let usuario = await Usuario.findOne({ email });
     if (usuario) {
@@ -51,6 +51,19 @@ const crearUsuario = async (req, res = response) => {
         msg: "El correo ya esta en uso",
       });
     }
+
+    let jefeId = null;
+    if (boss) {
+      const jefe = await Usuario.findOne({ ci: boss });
+      if (!jefe) {
+        return res.status(400).json({
+          ok: false,
+          msg: "El jefe con la cédula especificada no existe",
+        });
+      }
+      jefeId = jefe._id;
+    }
+
     usuario = await Usuario.findOne({ ci });
     if (usuario) {
       return res.status(400).json({
@@ -58,7 +71,7 @@ const crearUsuario = async (req, res = response) => {
         msg: "La cédula ya está en uso",
       });
     }
-    usuario = new Usuario(req.body);
+    usuario = new Usuario({ ...req.body, boss: jefeId });
     var salt = bcrypt.genSaltSync();
     usuario.password = bcrypt.hashSync(password, salt);
     await usuario.save();

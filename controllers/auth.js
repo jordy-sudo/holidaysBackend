@@ -5,8 +5,9 @@ const { generarToken } = require("../helpers/jwt");
 
 const loginUsuario = async (req, res = response) => {
   const { email, password } = req.body;
+  const emailUpperCase = email.toUpperCase();
   try {
-    let usuario = await Usuario.findOne({ email });
+    let usuario = await Usuario.findOne({ email: emailUpperCase });
     if (!usuario) {
       return res.status(400).json({
         ok: false,
@@ -42,9 +43,11 @@ const loginUsuario = async (req, res = response) => {
 };
 
 const crearUsuario = async (req, res = response) => {
-  const { email, password, ci,boss } = req.body;
+  const { email, password, ci, boss } = req.body;
+  const emailUpperCase = email.toUpperCase();
+
   try {
-    let usuario = await Usuario.findOne({ email });
+    let usuario = await Usuario.findOne({ email: emailUpperCase });
     if (usuario) {
       return res.status(400).json({
         ok: false,
@@ -71,7 +74,7 @@ const crearUsuario = async (req, res = response) => {
         msg: "La cédula ya está en uso",
       });
     }
-    usuario = new Usuario({ ...req.body, boss: jefeId });
+    usuario = new Usuario({ ...req.body, boss: jefeId, email: emailUpperCase });
     var salt = bcrypt.genSaltSync();
     usuario.password = bcrypt.hashSync(password, salt);
     await usuario.save();
@@ -155,31 +158,65 @@ const actualizarRolUsuario = async (req, res = response) => {
 
 const listarUsuarios = async (req, res = response) => {
   try {
-      const usuarios = await Usuario.find()
-          .populate({
-              path: 'boss',
-              select: 'name',  // Puedes incluir los campos que deseas mostrar del objeto boss
-          })
-          .select('-password');  // Excluye los campos _id y password del resultado principal
-      
-      return res.json({
-          ok: true,
-          usuarios,
-      });
+    const usuarios = await Usuario.find()
+      .populate({
+        path: 'boss',
+        select: 'name',  // Puedes incluir los campos que deseas mostrar del objeto boss
+      })
+      .select('-password');  // Excluye los campos _id y password del resultado principal
+
+    return res.json({
+      ok: true,
+      usuarios,
+    });
   } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-          ok: false,
-          msg: "Error al obtener listado de usuarios activos",
-      });
+    console.log(error);
+    return res.status(500).json({
+      ok: false,
+      msg: "Error al obtener listado de usuarios activos",
+    });
   }
 };
+
+const listarUsuariosPorJefe = async (req, res = response) => {
+  const jefeId = req.uid;
+  console.log(req);
+  try {
+    if (jefeId) {
+      const usuarios = await Usuario.find({ boss: jefeId })
+        .populate({
+          path: 'boss',
+          select: 'name',
+        })
+        .select('-password');
+
+      return res.json({
+        ok: true,
+        usuarios,
+      });
+
+    } else {
+      return res.status(401).json({
+        ok: false,
+        msg: 'Token no valido Vuelve a iniciar session'
+      });
+    }
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      ok: false,
+      msg: "Error al obtener listado de usuarios por jefe",
+    });
+  }
+};
+
 
 const revalidarToken = async (req, res = response) => {
   const uid = req.uid;
   const name = req.name;
   //nuevo token
-  const token = await generarToken(uid,name);
+  const token = await generarToken(uid, name);
 
   res.json({
     ok: true,
@@ -194,4 +231,5 @@ module.exports = {
   actualizarRolUsuario,
   actualizarInformacionUsuario,
   listarUsuarios,
+  listarUsuariosPorJefe,
 };

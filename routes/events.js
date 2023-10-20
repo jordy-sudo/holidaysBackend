@@ -21,11 +21,7 @@ router.use(validarJwt);
 //obtener eventos
 router.get("/", getEventos);
 router.get("/vacations",getEventosUser);
-router.get("/employee-vacations", 
-[
-  check("jefeId", "Es obligatorio la referencia del JEFE").exists(),validatorCamps
-], 
-getVacacionesDeEmpleados);
+router.get("/employee-vacations", getVacacionesDeEmpleados);
 router.get("/notifications",getNotifications);
 router.get("/documents",getDocumentosAprobados);
 

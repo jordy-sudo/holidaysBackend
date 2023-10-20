@@ -4,7 +4,7 @@
 */
 const  {Router} = require('express');
 const {check} = require('express-validator');
-const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario, listarUsuarios, actualizarInformacionUsuario } = require('../controllers/auth');
+const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario, listarUsuarios, actualizarInformacionUsuario, listarUsuariosPorJefe } = require('../controllers/auth');
 const { validatorCamps } = require('../middleware/validator-camps');
 const usuarios = require('../models/usuarios');
 const { isDate } = require('../helpers/isDate');
@@ -31,7 +31,7 @@ router.post(
             }
             return true;
         }),
-        check('boss', 'Se necesita una cedula valida del jefe').not().isEmpty(),
+        check('boss', 'Se necesita una cedula valida del jefe'),
         check('position', 'El cargo es obligatorio').not().isEmpty(),
         check('vacationDays', 'El numero de vacaciones es obligatorio').not().isEmpty(),
         check('ci', 'La cedula del usuario es obligatorio y debe ser una cedula valida (10 digitos)').not().isEmpty().isLength({ min: 10, max: 10 }),
@@ -46,6 +46,7 @@ router.post(
 
 //listar usuarios
 router.get('/listUsers',listarUsuarios)
+router.get('/listUsersxBoss',listarUsuariosPorJefe)
 
 
 //actualizar role

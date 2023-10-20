@@ -78,18 +78,17 @@ const getNotifications = async (req, res = response) => {
 const getVacacionesDeEmpleados = async (req, res = response) => {
   try {
     const jefeId = req.uid;
-    const eventos = await event.find({})
+    var eventos = await event.find({})
       .populate({
         path: 'user',
         match: { boss: jefeId },
         select: 'name ',
       });
-    console.log(eventos);
-    const eventosFiltrados = eventos.filter((evento) => evento.user !== null);
+    eventos = eventos.filter((evento) => evento.user !== null);
 
     res.json({
       ok: true,
-      eventosFiltrados,
+      eventos,
     });
   } catch (error) {
     console.log(error);

@@ -54,7 +54,6 @@ const getNotifications = async (req, res = response) => {
           'country',
           'department',
           'area',
-          'dateOfJoining',
         ],
       })
       .exec();
@@ -82,7 +81,7 @@ const getVacacionesDeEmpleados = async (req, res = response) => {
       .populate({
         path: 'user',
         match: { boss: jefeId },
-        select: 'name ',
+        select: ['name', 'dateOfJoining','country','area','department','position'],
       });
     eventos = eventos.filter((evento) => evento.user !== null);
 
@@ -186,6 +185,73 @@ const createEvent = async (req, res = response) => {
   }
 };
 
+const createEventEmployee = async (req, res = response) => {
+  try {
+    const { start, end,uid } = req.body;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const eventosSuperpuestos = await event.find({
+      user: uid, // Utilizar el número de cédula en lugar del uid
+      $or: [
+        {
+          start: { $lte: endDate },
+          end: { $gte: startDate },
+        },
+        {
+          start: { $lte: endDate },
+          end: { $gte: startDate },
+        },
+      ],
+    });
+
+    if (eventosSuperpuestos.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: 'No puedes solicitar vacaciones en fechas superpuestas o coincidentes con solicitudes anteriores.',
+      });
+    }
+
+    const usuario = await usuarios.findById(uid); 
+    if (!usuario) {
+      return res.status(400).json({
+        ok: false,
+        msg: 'Usuario no encontrado.',
+      });
+    }
+
+    const diasDisponibles = usuario.vacationDays;
+
+    const timeDiff = endDate - startDate;
+    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+    if (daysDiff > diasDisponibles) {
+      return res.status(400).json({
+        ok: false,
+        msg: 'No tienes suficientes días disponibles para esta solicitud de vacaciones.',
+      });
+    }
+
+    const evento = new event({
+      ...req.body,
+      user: uid,
+      requestedDays: daysDiff,
+    });
+
+    const eventoGuardado = await evento.save();
+
+    res.json({
+      ok: true,
+      evento: eventoGuardado,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador',
+    });
+  }
+};
 
 const actualizarEvento = async (req, res = response) => {
   const eventoId = req.params.id;
@@ -284,6 +350,37 @@ const actualizarEstado = async (req, res = response) => {
   }
 };
 
+const listarUsuariosPorJefe = async (req, res = response) => {
+  const jefeId = req.uid;
+  try {
+    if (jefeId) {
+      const usuariosXjefe = await usuarios.find({ boss: jefeId })
+        .populate({
+          path: 'boss',
+          select: 'name',
+        })
+        .select('-password');
+
+      return res.json({
+        ok: true,
+        eventos:usuariosXjefe,
+      });
+
+    } else {
+      return res.status(401).json({
+        ok: false,
+        msg: 'Token no valido Vuelve a iniciar session'
+      });
+    }
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      ok: false,
+      msg: "Error al obtener listado de usuarios por jefe",
+    });
+  }
+};
 
 
 module.exports = {
@@ -296,4 +393,6 @@ module.exports = {
   getEventosUser,
   getNotifications,
   getDocumentosAprobados,
+  listarUsuariosPorJefe,
+  createEventEmployee,
 };

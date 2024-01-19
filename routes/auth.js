@@ -4,7 +4,7 @@
 */
 const  {Router} = require('express');
 const {check} = require('express-validator');
-const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario, listarUsuarios, actualizarInformacionUsuario, listarUsuariosPorJefe } = require('../controllers/auth');
+const { loginUsuario, crearUsuario, revalidarToken, actualizarRolUsuario, listarUsuarios, actualizarInformacionUsuario, crearUsuariosMasivos, } = require('../controllers/auth');
 const { validatorCamps } = require('../middleware/validator-camps');
 const usuarios = require('../models/usuarios');
 const { isDate } = require('../helpers/isDate');
@@ -23,7 +23,7 @@ router.post(
     '/new',
     [
         check('name', 'Nombre es requerido').not().isEmpty(),
-        check('email', 'Email es requerido').isEmail(),
+        // check('email', 'Email es requerido').isEmail(),
         check('password', 'La contraseña debe tener 6 caracteres').isLength({ min: 6 }),
         check('role', 'El Rol es requerido').custom((value) => {
             if (!value || (value !== 'Empleado' && value !== 'Jefe' && value !== 'Administrador' && value !== 'rrhh')) {
@@ -44,9 +44,18 @@ router.post(
     crearUsuario
 );
 
+//crear usuarios masivos
+router.post(
+    '/new-massive',
+    [
+        check('usuarios', 'El array de usuarios no debe estar vacio').not().isEmpty(),
+        validatorCamps, 
+    ],
+    crearUsuariosMasivos
+);
+
 //listar usuarios
 router.get('/listUsers',listarUsuarios)
-router.get('/listUsersxBoss',listarUsuariosPorJefe)
 
 
 //actualizar role

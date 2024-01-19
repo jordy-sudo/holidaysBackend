@@ -30,6 +30,8 @@ const loginUsuario = async (req, res = response) => {
       role: usuario.role,
       position: usuario.position,
       department: usuario.department,
+      vacationDays:usuario.vacationDays,
+      dateOfJoining:usuario.dateOfJoining,
       email: usuario.email,
       token,
     });
@@ -91,6 +93,93 @@ const crearUsuario = async (req, res = response) => {
     res.json({
       ok: false,
       msg: "Error",
+    });
+  }
+};
+
+const crearUsuariosMasivos = async (req, res = response) => {
+  const usuariosParaCrear = req.body.usuarios; // Supongamos que los usuarios se envían en el cuerpo de la solicitud
+
+  // Arrays para almacenar estadísticas
+  const usuariosCreados = [];
+  const usuariosNoCreados = [];
+  let usuariosCreadosCont = 0;
+  let usuariosNoCreadosCont = 0;
+
+  try {
+    for (const userData of usuariosParaCrear) {
+      const { email, password, ci, boss } = userData;
+      const emailUpperCase = email.toUpperCase();
+      
+
+      let usuario = await Usuario.findOne({ email: emailUpperCase });
+      if (usuario) {
+        usuariosNoCreadosCont++;
+        usuariosNoCreados.push({
+          error: "El correo ya está en uso",
+          userData,
+        }); 
+        continue; // Pasar al siguiente usuario
+      }
+
+      let jefeId = null;
+      if (boss) {
+        const jefe = await Usuario.findOne({ ci: boss });
+        if (!jefe) {
+          usuariosNoCreadosCont++;
+          usuariosNoCreados.push({
+            error: "El jefe con la cédula especificada no existe",
+            userData,
+          });
+          continue; // Pasar al siguiente usuario
+        }
+        jefeId = jefe._id;
+      }
+
+      usuario = await Usuario.findOne({ ci });
+      if (usuario) {
+        usuariosNoCreadosCont++;
+        usuariosNoCreados.push({
+          error: "La cédula ya está en uso",
+          userData,
+        });
+        continue; // Pasar al siguiente usuario
+      }
+
+      usuario = new Usuario({
+        ...userData,
+        boss: jefeId,
+        email: emailUpperCase,
+      });
+
+      const salt = bcrypt.genSaltSync();
+      usuario.password = bcrypt.hashSync(password, salt);
+
+      await usuario.save();
+
+      // Agregar el usuario creado a la lista de usuarios creados
+      usuariosCreadosCont++;
+      usuariosCreados.push({
+        uid: usuario.id,
+        user: usuario.name,
+      });
+    }
+
+    // Devolver estadísticas junto con la respuesta
+    res.json({
+      ok: true,
+      msg:{
+        "UsuariosCreados":usuariosCreados,
+        "Usuarioscreados":usuariosNoCreados,
+      },
+      detail:`Usuarios Creados: ${usuariosCreadosCont}, Usuarios no creados: ${usuariosNoCreadosCont}`,
+      
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({
+      ok: false,
+      msg: "Error en la carga masiva",
     });
   }
 };
@@ -178,38 +267,7 @@ const listarUsuarios = async (req, res = response) => {
   }
 };
 
-const listarUsuariosPorJefe = async (req, res = response) => {
-  const jefeId = req.uid;
-  console.log(req);
-  try {
-    if (jefeId) {
-      const usuarios = await Usuario.find({ boss: jefeId })
-        .populate({
-          path: 'boss',
-          select: 'name',
-        })
-        .select('-password');
 
-      return res.json({
-        ok: true,
-        usuarios,
-      });
-
-    } else {
-      return res.status(401).json({
-        ok: false,
-        msg: 'Token no valido Vuelve a iniciar session'
-      });
-    }
-
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      ok: false,
-      msg: "Error al obtener listado de usuarios por jefe",
-    });
-  }
-};
 
 
 const revalidarToken = async (req, res = response) => {
@@ -231,5 +289,5 @@ module.exports = {
   actualizarRolUsuario,
   actualizarInformacionUsuario,
   listarUsuarios,
-  listarUsuariosPorJefe,
+  crearUsuariosMasivos,
 };

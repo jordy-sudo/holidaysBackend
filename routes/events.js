@@ -9,6 +9,8 @@ const {
   actualizarEstado,
   getNotifications,
   getDocumentosAprobados,
+  listarUsuariosPorJefe,
+  createEventEmployee,
 } = require("../controllers/events");
 const { check } = require("express-validator");
 const { validarJwt } = require("../middleware/validat-jwt");
@@ -25,6 +27,8 @@ router.get("/employee-vacations", getVacacionesDeEmpleados);
 router.get("/notifications",getNotifications);
 router.get("/documents",getDocumentosAprobados);
 
+router.get('/listUsersxBoss',listarUsuariosPorJefe)
+
 //crear un nuevo evento
 router.post(
   "/",
@@ -35,6 +39,18 @@ router.post(
   ],
   createEvent
 );
+
+router.post(
+  "/event-employee",
+  [
+    check("uid", "La uid del usuario es obligatoria").notEmpty(),
+    check("start", "La fecha de inicio es obligatoria").custom(isDate),
+    check("end", "La fecha final es obligatoria").custom(isDate),
+    validatorCamps,
+  ],
+  createEventEmployee
+);
+
 //actulaizar estado o pdf 
 router.patch('/update-status/:id',
 [

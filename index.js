@@ -1,10 +1,13 @@
 const express = require('express');
-const { connectDb } = require('./databases/config');
+const { connectDb, } = require('./databases/config');
 const cors = require('cors');
+const { generateUsers } = require('./helpers/generateUsers');
 require('dotenv').config();
 
 const app = express();
 
+//helpers
+// generateUsers();
 
 app.use(express.static('./public'));
 

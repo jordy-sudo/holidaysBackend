@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const mysql = require("mysql2/promise");
 
 const connectDb = async () => {
   try {
@@ -32,6 +33,37 @@ const connectDb = async () => {
   }
 };
 
+const connectMySqlDb = async () => {
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.db_mysql_36_host,
+      port: process.env.db_mysql_36_port,
+      user: process.env.db_mysql_36_user,
+      password: process.env.db_mysql_36_passwd,
+      database: process.env.db_mysql_36_table,
+    });
+
+    console.log("Connected to MySQL 36");
+    return connection;
+  } catch (error) {
+    console.error("Error al conectar a la base de datos MySQL:", error);
+    throw error;
+  }
+};
+
+const closeMySqlDb = async (connection) => {
+  try {
+    await connection.destroy();
+    console.log("MySQL connection closed");
+  } catch (error) {
+    console.error("Error closing MySQL connection:", error);
+    throw error;
+  }
+};
+
+
 module.exports = {
   connectDb,
+  connectMySqlDb,
+  closeMySqlDb,
 };
